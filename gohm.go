@@ -1,6 +1,6 @@
 package gohm
 
-import(
+import (
 	"errors"
 	"github.com/garyburd/redigo/redis"
 	"github.com/pote/go-msgpack"
@@ -14,7 +14,7 @@ type Gohm struct {
 	LuaDelete *redis.Script
 }
 
-func NewGohm(r... *redis.Pool) (*Gohm, error) {
+func NewGohm(r ...*redis.Pool) (*Gohm, error) {
 	if len(r) < 1 {
 		pool, err := redisurl.NewPool(3, 200, "240s")
 		if err != nil {
@@ -93,7 +93,7 @@ func (g *Gohm) Save(model interface{}) error {
 
 	conn := g.RedisPool.Get()
 	defer conn.Close()
-	id, err :=  redis.String(g.LuaSave.Do(conn, ohmFeatures, ohmAttrs, ohmIndices, ohmUniques))
+	id, err := redis.String(g.LuaSave.Do(conn, ohmFeatures, ohmAttrs, ohmIndices, ohmUniques))
 	if err != nil {
 		return err
 	}
@@ -117,8 +117,8 @@ func (g *Gohm) Delete(model interface{}) error {
 	// Prepare Ohm-scripts `features` parameter.
 	features := map[string]string{
 		"name": modelType.Name(),
-		"id": modelId,
-		"key": connectKeys(modelType.Name(), modelId),
+		"id":   modelId,
+		"key":  connectKeys(modelType.Name(), modelId),
 	}
 	ohmFeatures, err := msgpack.Marshal(features)
 	if err != nil {
@@ -144,7 +144,7 @@ func (g *Gohm) Delete(model interface{}) error {
 
 	conn := g.RedisPool.Get()
 	defer conn.Close()
-	id, err :=  redis.String(g.LuaDelete.Do(conn, ohmFeatures, ohmUniques, ohmTracked))
+	id, err := redis.String(g.LuaDelete.Do(conn, ohmFeatures, ohmUniques, ohmTracked))
 	if err != nil {
 		return err
 	}

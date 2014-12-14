@@ -1,15 +1,15 @@
 package gohm
 
-import(
+import (
 	`github.com/pote/redisurl`
 	`testing`
 )
 
 type user struct {
-	ID      string `ohm:"id"`
-	Name    string `ohm:"name"`
-	Email   string `ohm:"email index"`
-	UUID    string `ohm:"uuid unique"`
+	ID    string `ohm:"id"`
+	Name  string `ohm:"name"`
+	Email string `ohm:"email index"`
+	UUID  string `ohm:"uuid unique"`
 	//Friends []user `ohm:"collection"`
 }
 
@@ -30,7 +30,7 @@ func TestSaveLoadsID(t *testing.T) {
 	}
 
 	u := &user{
-		Name: `Marty`,
+		Name:  `Marty`,
 		Email: `marty@mcfly.com`,
 	}
 
@@ -49,7 +49,7 @@ func TestLoad(t *testing.T) {
 	defer dbCleanup()
 	gohm, _ := NewGohm()
 	gohm.Save(&user{
-		Name: `Marty`,
+		Name:  `Marty`,
 		Email: `marty@mcfly.com`,
 	})
 

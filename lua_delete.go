@@ -1,6 +1,6 @@
 package gohm
 
-const LUA_DELETE string =`
+const LUA_DELETE string = `
 -- This script receives three parameters, all encoded with
 -- MessagePack. The decoded values are used for deleting a model
 -- instance in Redis and removing any reference to it in sets

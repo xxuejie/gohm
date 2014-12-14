@@ -1,6 +1,6 @@
 package gohm
 
-import(
+import (
 	`reflect`
 	`testing`
 )

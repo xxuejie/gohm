@@ -1,6 +1,6 @@
 package gohm
 
-import(
+import (
 	"errors"
 	"fmt"
 	"reflect"
@@ -47,15 +47,15 @@ func validateModel(model interface{}) error {
 }
 
 func stringInSlice(a string, list []string) bool {
-    for _, b := range list {
-        if b == a {
-            return true
-        }
-    }
-    return false
+	for _, b := range list {
+		if b == a {
+			return true
+		}
+	}
+	return false
 }
 
-func modelAttrIndexMap(model interface{}) (map[string]int) {
+func modelAttrIndexMap(model interface{}) map[string]int {
 	attrs := map[string]int{}
 	typeData := reflect.TypeOf(model).Elem()
 	for i := 0; i < typeData.NumField(); i++ {
@@ -69,7 +69,7 @@ func modelAttrIndexMap(model interface{}) (map[string]int) {
 	return attrs
 }
 
-func modelIndexIndexMap(model interface{}) (map[string]int) {
+func modelIndexIndexMap(model interface{}) map[string]int {
 	indices := map[string]int{}
 	typeData := reflect.TypeOf(model).Elem()
 	for i := 0; i < typeData.NumField(); i++ {
@@ -86,7 +86,7 @@ func modelIndexIndexMap(model interface{}) (map[string]int) {
 	return indices
 }
 
-func modelUniqueIndexMap(model interface{}) (map[string]int) {
+func modelUniqueIndexMap(model interface{}) map[string]int {
 	uniques := map[string]int{}
 	typeData := reflect.TypeOf(model).Elem()
 	for i := 0; i < typeData.NumField(); i++ {
@@ -197,7 +197,7 @@ func modelLoadAttrs(attrs []string, model interface{}) {
 	attrIndexMap := modelAttrIndexMap(model)
 	for i := 0; i < len(attrs); i = i + 2 {
 		attrName := attrs[i]
-		attrValue := attrs[i + 1]
+		attrValue := attrs[i+1]
 		attrIndex := attrIndexMap[attrName]
 
 		if modelHasAttribute(model, attrName) {
