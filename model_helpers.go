@@ -103,6 +103,15 @@ func modelUniqueIndexMap(model interface{}) (map[string]int) {
 	return uniques
 }
 
+func toString(v interface{}) string {
+	return fmt.Sprint(v)
+}
+
+// Works like https://github.com/soveran/nido
+func connectKeys(a, b interface{}) string {
+	return fmt.Sprintf("%v:%v", a, b)
+}
+
 func modelKey(model interface{}) (key string) {
 	key = fmt.Sprintf("%v:%v", modelType(model), modelID(model))
 

@@ -1,7 +1,6 @@
 package gohm
 
 import(
-	"errors"
 	"github.com/garyburd/redigo/redis"
 	"github.com/pote/go-msgpack"
 	"github.com/pote/redisurl"
@@ -100,28 +99,22 @@ func (g *Gohm) Save(model interface{}) (error) {
 	return nil
 }
 
-func (g *Gohm) Load(model interface{}) (err error) {
+func (g *Gohm) FetchById(model interface{}, id interface{}) (bool, error) {
 	if err := validateModel(model); err != nil {
-		return err
-	}
-
-	if modelID(model) == "" {
-		err = errors.New(`model does not have a set ohm:"id"`)
-		return
+		return false, err
 	}
 
 	conn := g.RedisPool.Get()
 	defer conn.Close()
 
-	attrs, err := redis.Strings(conn.Do("HGETALL", modelKey(model)))
-	if err != nil {
-		return
+	attrs, err := redis.Strings(conn.Do(
+		"HGETALL", connectKeys(modelType(model), id)))
+	if err != nil || len(attrs) == 0 {
+		return false, err
 	}
-	if len(attrs) == 0 {
-		err = errors.New(`Couldn't find "` + modelKey(model) + `" in redis`)
-		return
-	}
-	modelLoadAttrs(attrs, model)
 
-	return
+	modelLoadAttrs(attrs, model)
+	// TODO: Support free conversion between string and int for ID field
+	modelSetID(toString(id), model)
+	return true, nil
 }
