@@ -1,6 +1,7 @@
 package gohm
 
 import(
+	"errors"
 	"github.com/garyburd/redigo/redis"
 	"github.com/pote/go-msgpack"
 	"github.com/pote/redisurl"
@@ -10,6 +11,7 @@ import(
 type Gohm struct {
 	RedisPool *redis.Pool
 	LuaSave   *redis.Script
+	LuaDelete *redis.Script
 }
 
 func NewGohm(r... *redis.Pool) (*Gohm, error) {
@@ -31,11 +33,12 @@ func NewGohmWithPool(pool *redis.Pool) *Gohm {
 	}
 
 	g.LuaSave = redis.NewScript(0, LUA_SAVE)
+	g.LuaDelete = redis.NewScript(0, LUA_DELETE)
 
 	return g
 }
 
-func (g *Gohm) Save(model interface{}) (error) {
+func (g *Gohm) Save(model interface{}) error {
 	if err := validateModel(model); err != nil {
 		return err
 	}
@@ -91,6 +94,57 @@ func (g *Gohm) Save(model interface{}) (error) {
 	conn := g.RedisPool.Get()
 	defer conn.Close()
 	id, err :=  redis.String(g.LuaSave.Do(conn, ohmFeatures, ohmAttrs, ohmIndices, ohmUniques))
+	if err != nil {
+		return err
+	}
+	modelSetID(id, model)
+
+	return nil
+}
+
+func (g *Gohm) Delete(model interface{}) error {
+	if err := validateModel(model); err != nil {
+		return err
+	}
+
+	modelData := reflect.ValueOf(model).Elem()
+	modelType := modelData.Type()
+	modelId := modelID(model)
+	if modelId == "" {
+		return errors.New("MissingID!")
+	}
+
+	// Prepare Ohm-scripts `features` parameter.
+	features := map[string]string{
+		"name": modelType.Name(),
+		"id": modelId,
+		"key": connectKeys(modelType.Name(), modelId),
+	}
+	ohmFeatures, err := msgpack.Marshal(features)
+	if err != nil {
+		return err
+	}
+
+	// Prepare Ohm-scripts `uniques` parameter.
+	uniques := map[string]string{}
+	for attr, index := range modelUniqueIndexMap(model) {
+		uniques[attr] = modelData.Field(index).String()
+	}
+
+	ohmUniques, err := msgpack.Marshal(uniques)
+	if err != nil {
+		return err
+	}
+
+	// TODO: implements tracked
+	ohmTracked, err := msgpack.Marshal([]string{})
+	if err != nil {
+		return err
+	}
+
+	conn := g.RedisPool.Get()
+	defer conn.Close()
+	id, err :=  redis.String(g.LuaDelete.Do(conn, ohmFeatures, ohmUniques, ohmTracked))
 	if err != nil {
 		return err
 	}
