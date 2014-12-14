@@ -44,7 +44,7 @@ func TestSaveLoadsID(t *testing.T) {
 	}
 }
 
-func TestLoad(t *testing.T) {
+func TestFetchById(t *testing.T) {
 	dbCleanup()
 	defer dbCleanup()
 	gohm, _ := NewGohm()
@@ -53,10 +53,14 @@ func TestLoad(t *testing.T) {
 		Email: `marty@mcfly.com`,
 	})
 
-	u := &user{ID: `1`}
-	err := gohm.Load(u)
+	u := &user{}
+	found, err := gohm.FetchById(u, `1`)
 	if err != nil {
 		t.Error(err)
+	}
+
+	if !found {
+		t.Errorf(`Found is not correct (expected true, was %v)`, found)
 	}
 
 	if u.ID != `1` {
@@ -66,27 +70,50 @@ func TestLoad(t *testing.T) {
 	if u.Name != `Marty` {
 		t.Errorf(`incorrect Name set (expected "Marty", got "%v")`, u.Name)
 	}
-
-	u2 := &user{}
-	if err = gohm.Load(u2); err == nil {
-		t.Error(`Load should return an error when loading model without a set id`)
-	}
 }
 
-func TestLoadInvalidID(t *testing.T) {
+func TestFetchInvalidID(t *testing.T) {
 	dbCleanup()
 	defer dbCleanup()
 
-	u := &user{ID: `1000000`}
+	u := &user{}
 
 	gohm, _ := NewGohm()
 
-	err := gohm.Load(u)
-	if err == nil {
-		t.Error(`did not return an error when fetching an invalid ID`)
+	found, err := gohm.FetchById(u, `1000000`)
+	if err != nil {
+		t.Error(err)
 	}
 
-	if err.Error() != `Couldn't find "user:1000000" in redis` {
-		t.Error(`did not return the expected error message, returned "` + err.Error() + `"`)
+	if found {
+		t.Errorf(`Found is not correct (expected false, was %v)`, found)
+	}
+}
+
+func TestDelete(t *testing.T) {
+	dbCleanup()
+	defer dbCleanup()
+	gohm, _ := NewGohm()
+	gohm.Save(&user{
+		Name:  `Marty`,
+		Email: `marty@mcfly.com`,
+	})
+
+	u := &user{}
+	gohm.FetchById(u, `1`)
+
+	err := gohm.Delete(u)
+	if err != nil {
+		t.Error(err)
+	}
+
+	// Make sure user is deleted indeed
+	found, err := gohm.FetchById(u, `1`)
+	if err != nil {
+		t.Error(err)
+	}
+
+	if found {
+		t.Errorf(`Found is not correct (expected false, was %v)`, found)
 	}
 }
