@@ -46,6 +46,15 @@ func validateModel(model interface{}) error {
 	return nil
 }
 
+func stringInSlice(a string, list []string) bool {
+    for _, b := range list {
+        if b == a {
+            return true
+        }
+    }
+    return false
+}
+
 func modelAttrIndexMap(model interface{}) (map[string]int) {
 	attrs := map[string]int{}
 	typeData := reflect.TypeOf(model).Elem()
@@ -58,6 +67,40 @@ func modelAttrIndexMap(model interface{}) (map[string]int) {
 	}
 
 	return attrs
+}
+
+func modelIndexIndexMap(model interface{}) (map[string]int) {
+	indices := map[string]int{}
+	typeData := reflect.TypeOf(model).Elem()
+	for i := 0; i < typeData.NumField(); i++ {
+		field := typeData.Field(i)
+		tags := strings.Split(field.Tag.Get(`ohm`), ` `)
+		key := tags[0]
+		if key != `` && key != `-` && key != `id` {
+			if stringInSlice(`index`, tags[1:]) {
+				indices[key] = i
+			}
+		}
+	}
+
+	return indices
+}
+
+func modelUniqueIndexMap(model interface{}) (map[string]int) {
+	uniques := map[string]int{}
+	typeData := reflect.TypeOf(model).Elem()
+	for i := 0; i < typeData.NumField(); i++ {
+		field := typeData.Field(i)
+		tags := strings.Split(field.Tag.Get(`ohm`), ` `)
+		key := tags[0]
+		if key != `` && key != `-` && key != `id` {
+			if stringInSlice(`unique`, tags[1:]) {
+				uniques[key] = i
+			}
+		}
+	}
+
+	return uniques
 }
 
 func modelKey(model interface{}) (key string) {

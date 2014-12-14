@@ -18,7 +18,7 @@ func NewGohm(r... *redis.Pool) (*Gohm, error) {
 		pool, err := redisurl.NewPool(3, 200, "240s")
 		if err != nil {
 			return &Gohm{}, err
-		}	
+		}
 
 		return NewGohmWithPool(pool), nil
 	} else {
@@ -68,16 +68,23 @@ func (g *Gohm) Save(model interface{}) (error) {
 		return err
 	}
 
-	// TODO
 	// Prepare Ohm-scripts `indices` parameter.
-	ohmIndices, err := msgpack.Marshal(&map[string]string{})
+	indices := map[string][]string{}
+	indexIndexMap := modelIndexIndexMap(model)
+	for attr, index := range indexIndexMap {
+		indices[attr] = []string{modelData.Field(index).String()}
+	}
+	ohmIndices, err := msgpack.Marshal(indices)
 	if err != nil {
 		return err
 	}
 
-	// TODO
 	// Prepare Ohm-scripts `uniques` parameter.
-	ohmUniques, err := msgpack.Marshal(&map[string]string{})
+	uniques := map[string]string{}
+	for attr, index := range modelUniqueIndexMap(model) {
+		uniques[attr] = modelData.Field(index).String()
+	}
+	ohmUniques, err := msgpack.Marshal(uniques)
 	if err != nil {
 		return err
 	}
