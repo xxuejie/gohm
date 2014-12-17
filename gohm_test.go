@@ -171,7 +171,7 @@ func TestAll(t *testing.T) {
 	}
 }
 
-func TestSingleReturnFromALl(t *testing.T) {
+func TestSingleReturnFromAll(t *testing.T) {
 	dbCleanup()
 	defer dbCleanup()
 	gohm, err := NewGohm()
@@ -196,5 +196,44 @@ func TestSingleReturnFromALl(t *testing.T) {
 
 	if !assertUserPresent(*expected, []user{u}) {
 		t.Errorf(`Expected user "%v" to be presented but not`, expected.ID)
+	}
+}
+
+func TestFilter(t *testing.T) {
+	dbCleanup()
+	defer dbCleanup()
+	gohm, err := NewGohm()
+	if err != nil {
+		t.Error(err)
+	}
+
+	u1 := &user{
+		Name:  `Marty1`,
+		Email: `marty1@mcfly.com`,
+	}
+	err = gohm.Save(u1)
+	if err != nil {
+		t.Error(err)
+	}
+	u2 := &user{
+		Name:  `Marty2`,
+		Email: `marty2@mcfly.com`,
+	}
+	err = gohm.Save(u2)
+	if err != nil {
+		t.Error(err)
+	}
+
+	var users []user
+	err = gohm.All().Find("email", "marty2@mcfly.com").Fetch(&users)
+	if err != nil {
+		t.Error(err)
+	}
+
+	if len(users) != 1 {
+		t.Errorf(`Expected 1 user, but was %v`, len(users))
+	}
+	if !assertUserPresent(*u2, users) {
+		t.Errorf(`Expected user "%v" to be presented but not`, u2.ID)
 	}
 }

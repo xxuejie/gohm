@@ -5,8 +5,12 @@ import (
 	"github.com/garyburd/redigo/redis"
 	"github.com/pote/go-msgpack"
 	"github.com/pote/redisurl"
-	"reflect"
 	"sync"
+)
+
+var (
+	IndexNotFoundError = errors.New("Index is not found!")
+	NotImplementedError = errors.New("Not implemented!")
 )
 
 type Gohm struct {
@@ -47,7 +51,7 @@ func (g *Gohm) Save(model interface{}) error {
 		return err
 	}
 
-	modelData := reflect.ValueOf(model).Elem()
+	modelData := modelReflectValue(model)
 	modelType := modelData.Type()
 
 	// Prepare Ohm-scripts `features` parameter.
@@ -64,7 +68,7 @@ func (g *Gohm) Save(model interface{}) error {
 
 	// Prepare Ohm-scripts `attributes` parameter.
 	attrs := []string{}
-	attrIndexMap := modelAttrIndexMap(model)
+	attrIndexMap := modelAttrIndexMap(modelType)
 	for attr, index := range attrIndexMap {
 		attrs = append(attrs, attr)
 		attrs = append(attrs, modelData.Field(index).String())
@@ -76,7 +80,7 @@ func (g *Gohm) Save(model interface{}) error {
 
 	// Prepare Ohm-scripts `indices` parameter.
 	indices := map[string][]string{}
-	indexIndexMap := modelIndexIndexMap(model)
+	indexIndexMap := modelIndexIndexMap(modelType)
 	for attr, index := range indexIndexMap {
 		val := modelData.Field(index).String()
 		if len(val) > 0 {
@@ -90,7 +94,7 @@ func (g *Gohm) Save(model interface{}) error {
 
 	// Prepare Ohm-scripts `uniques` parameter.
 	uniques := map[string]string{}
-	for attr, index := range modelUniqueIndexMap(model) {
+	for attr, index := range modelUniqueIndexMap(modelType) {
 		val := modelData.Field(index).String()
 		if len(val) > 0 {
 			uniques[attr] = val
@@ -117,7 +121,7 @@ func (g *Gohm) Delete(model interface{}) error {
 		return err
 	}
 
-	modelData := reflect.ValueOf(model).Elem()
+	modelData := modelReflectValue(model)
 	modelType := modelData.Type()
 	modelId := modelID(model)
 	if modelId == "" {
@@ -137,7 +141,7 @@ func (g *Gohm) Delete(model interface{}) error {
 
 	// Prepare Ohm-scripts `uniques` parameter.
 	uniques := map[string]string{}
-	for attr, index := range modelUniqueIndexMap(model) {
+	for attr, index := range modelUniqueIndexMap(modelType) {
 		val := modelData.Field(index).String()
 		if len(val) > 0 {
 			uniques[attr] = val

@@ -2,6 +2,7 @@ package gohm
 
 import (
 	"fmt"
+	"strings"
 )
 
 func toString(v interface{}) string {
@@ -9,8 +10,12 @@ func toString(v interface{}) string {
 }
 
 // Works like https://github.com/soveran/nido
-func connectKeys(a, b interface{}) string {
-	return fmt.Sprintf("%v:%v", a, b)
+func connectKeys(keys ... interface{}) string {
+	strs := make([]string, len(keys))
+	for i := range keys {
+		strs[i] = toString(keys[i])
+	}
+	return strings.Join(strs, ":")
 }
 
 func stringInSlice(a string, list []string) bool {

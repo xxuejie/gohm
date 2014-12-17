@@ -45,7 +45,7 @@ func TestValidateModel(t *testing.T) {
 }
 
 func TestModelAttrIndexMap(t *testing.T) {
-	attrMap := modelAttrIndexMap(&validModel{})
+	attrMap := modelAttrIndexMap(reflect.ValueOf(validModel{}).Type())
 
 	expectedMap := map[string]int{
 		`name`:  1,
@@ -72,17 +72,19 @@ func TestModelID(t *testing.T) {
 }
 
 func TestModelHasAttribute(t *testing.T) {
-	if !modelHasAttribute(&validModel{}, `email`) {
+	modelType := reflect.ValueOf(validModel{}).Type()
+	if !modelHasAttribute(modelType, `email`) {
 		t.Error(`model has attribute "email", but the function return false`)
 	}
 
-	if modelHasAttribute(&validModel{}, `palangana`) {
+	if modelHasAttribute(modelType, `palangana`) {
 		t.Error(`model doesnt have the attribute "palangana", but the function return true`)
 	}
 }
 
 func TestModelIDFieldName(t *testing.T) {
-	if modelIDFieldName(&validModel{}) != `ID` {
+	modelType := reflect.ValueOf(validModel{}).Type()
+	if modelIDFieldName(modelType) != `ID` {
 		t.Error(`function is not correctly reporting the ID field name`)
 	}
 }

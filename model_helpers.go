@@ -46,21 +46,8 @@ func validateModel(model interface{}) error {
 	return nil
 }
 
-func modelReflectValue(model interface{}) reflect.Value {
-	v := reflect.ValueOf(model)
-	if v.Kind() == reflect.Ptr {
-		v = v.Elem()
-	}
-	return v
-}
-
-func modelReflectType(model interface{}) reflect.Type {
-	return modelReflectValue(model).Type()
-}
-
-func modelAttrIndexMap(model interface{}) map[string]int {
+func modelAttrIndexMap(typeData reflect.Type) map[string]int {
 	attrs := map[string]int{}
-	typeData := modelReflectType(model)
 	for i := 0; i < typeData.NumField(); i++ {
 		field := typeData.Field(i)
 		tag := strings.Split(field.Tag.Get(`ohm`), ` `)[0]
@@ -72,9 +59,8 @@ func modelAttrIndexMap(model interface{}) map[string]int {
 	return attrs
 }
 
-func modelIndexIndexMap(model interface{}) map[string]int {
+func modelIndexIndexMap(typeData reflect.Type) map[string]int {
 	indices := map[string]int{}
-	typeData := modelReflectType(model)
 	for i := 0; i < typeData.NumField(); i++ {
 		field := typeData.Field(i)
 		tags := strings.Split(field.Tag.Get(`ohm`), ` `)
@@ -89,9 +75,8 @@ func modelIndexIndexMap(model interface{}) map[string]int {
 	return indices
 }
 
-func modelUniqueIndexMap(model interface{}) map[string]int {
+func modelUniqueIndexMap(typeData reflect.Type) map[string]int {
 	uniques := map[string]int{}
-	typeData := modelReflectType(model)
 	for i := 0; i < typeData.NumField(); i++ {
 		field := typeData.Field(i)
 		tags := strings.Split(field.Tag.Get(`ohm`), ` `)
@@ -102,40 +87,21 @@ func modelUniqueIndexMap(model interface{}) map[string]int {
 			}
 		}
 	}
-
 	return uniques
 }
 
-func modelKey(model interface{}) (key string) {
-	key = fmt.Sprintf("%v:%v", modelType(model), modelID(model))
-
-	return
+func modelHasIndex(typeData reflect.Type, index string) bool {
+	_, ok := modelIndexIndexMap(typeData)[index]
+	return ok
 }
 
-func modelID(model interface{}) (id string) {
-	modelData := modelReflectValue(model)
-	idFieldName := modelIDFieldName(model)
-	id = modelData.FieldByName(idFieldName).String()
-
-	return
+func modelHasAttribute(typeData reflect.Type, attribute string) bool {
+	_, ok := modelAttrIndexMap(typeData)[attribute]
+	return ok
 }
 
-func modelHasAttribute(model interface{}, attribute string) bool {
-	attrIndexMap := modelAttrIndexMap(model)
-	for attr, _ := range attrIndexMap {
-		if attribute == attr {
-			return true
-		}
-	}
-
-	return false
-}
-
-func modelIDFieldName(model interface{}) (fieldName string) {
-	modelData := modelReflectValue(model)
-	modelType := modelData.Type()
-
-	for i := 0; i < modelData.NumField(); i++ {
+func modelIDFieldName(modelType reflect.Type) (fieldName string) {
+	for i := 0; i < modelType.NumField(); i++ {
 		field := modelType.Field(i)
 		tag := field.Tag.Get(`ohm`)
 		if tag == `id` {
@@ -147,19 +113,46 @@ func modelIDFieldName(model interface{}) (fieldName string) {
 	return
 }
 
-func modelSetID(id string, model interface{}) {
-	modelReflectValue(model).FieldByName(modelIDFieldName(model)).SetString(id)
+func modelKey(model interface{}) (key string) {
+	key = fmt.Sprintf("%v:%v", modelType(model), modelID(model))
+
+	return
+}
+
+func modelID(model interface{}) (id string) {
+	modelData := modelReflectValue(model)
+	idFieldName := modelIDFieldName(modelData.Type())
+	id = modelData.FieldByName(idFieldName).String()
+
+	return
+}
+
+func modelReflectValue(model interface{}) reflect.Value {
+	v := reflect.ValueOf(model)
+	if v.Kind() == reflect.Ptr {
+		v = v.Elem()
+	}
+	return v
+}
+
+func modelReflectType(model interface{}) reflect.Type {
+	return modelReflectValue(model).Type()
 }
 
 func modelType(model interface{}) string {
 	return modelReflectType(model).Name()
 }
 
+func modelSetID(id string, model interface{}) {
+	modelData := modelReflectValue(model)
+	modelType := modelData.Type()
+	modelData.FieldByName(modelIDFieldName(modelType)).SetString(id)
+}
+
 func modelLoadAttrs(attrs []string, model interface{}) {
 	modelData := modelReflectValue(model)
 	modelType := modelData.Type()
-	fmt.Printf("Load attrs of type: %s\n", modelType.Name())
-	attrIndexMap := modelAttrIndexMap(model)
+	attrIndexMap := modelAttrIndexMap(modelType)
 	for i := 0; i < len(attrs); i = i + 2 {
 		attrName := attrs[i]
 		attrValue := attrs[i+1]
@@ -167,7 +160,7 @@ func modelLoadAttrs(attrs []string, model interface{}) {
 
 		if attrName == "id" {
 			modelSetID(attrValue, model)
-		} else if modelHasAttribute(model, attrName) {
+		} else if modelHasAttribute(modelType, attrName) {
 			attrValueValue := reflect.ValueOf(attrValue)
 			typedAttrValue := attrValueValue.Convert(modelType.Field(attrIndex).Type)
 			modelData.Field(attrIndex).Set(typedAttrValue)
