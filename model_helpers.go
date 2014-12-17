@@ -46,18 +46,21 @@ func validateModel(model interface{}) error {
 	return nil
 }
 
-func stringInSlice(a string, list []string) bool {
-	for _, b := range list {
-		if b == a {
-			return true
-		}
+func modelReflectValue(model interface{}) reflect.Value {
+	v := reflect.ValueOf(model)
+	if v.Kind() == reflect.Ptr {
+		v = v.Elem()
 	}
-	return false
+	return v
+}
+
+func modelReflectType(model interface{}) reflect.Type {
+	return modelReflectValue(model).Type()
 }
 
 func modelAttrIndexMap(model interface{}) map[string]int {
 	attrs := map[string]int{}
-	typeData := reflect.TypeOf(model).Elem()
+	typeData := modelReflectType(model)
 	for i := 0; i < typeData.NumField(); i++ {
 		field := typeData.Field(i)
 		tag := strings.Split(field.Tag.Get(`ohm`), ` `)[0]
@@ -71,7 +74,7 @@ func modelAttrIndexMap(model interface{}) map[string]int {
 
 func modelIndexIndexMap(model interface{}) map[string]int {
 	indices := map[string]int{}
-	typeData := reflect.TypeOf(model).Elem()
+	typeData := modelReflectType(model)
 	for i := 0; i < typeData.NumField(); i++ {
 		field := typeData.Field(i)
 		tags := strings.Split(field.Tag.Get(`ohm`), ` `)
@@ -88,7 +91,7 @@ func modelIndexIndexMap(model interface{}) map[string]int {
 
 func modelUniqueIndexMap(model interface{}) map[string]int {
 	uniques := map[string]int{}
-	typeData := reflect.TypeOf(model).Elem()
+	typeData := modelReflectType(model)
 	for i := 0; i < typeData.NumField(); i++ {
 		field := typeData.Field(i)
 		tags := strings.Split(field.Tag.Get(`ohm`), ` `)
@@ -103,15 +106,6 @@ func modelUniqueIndexMap(model interface{}) map[string]int {
 	return uniques
 }
 
-func toString(v interface{}) string {
-	return fmt.Sprint(v)
-}
-
-// Works like https://github.com/soveran/nido
-func connectKeys(a, b interface{}) string {
-	return fmt.Sprintf("%v:%v", a, b)
-}
-
 func modelKey(model interface{}) (key string) {
 	key = fmt.Sprintf("%v:%v", modelType(model), modelID(model))
 
@@ -119,7 +113,7 @@ func modelKey(model interface{}) (key string) {
 }
 
 func modelID(model interface{}) (id string) {
-	modelData := reflect.ValueOf(model).Elem()
+	modelData := modelReflectValue(model)
 	idFieldName := modelIDFieldName(model)
 	id = modelData.FieldByName(idFieldName).String()
 
@@ -138,7 +132,7 @@ func modelHasAttribute(model interface{}, attribute string) bool {
 }
 
 func modelIDFieldName(model interface{}) (fieldName string) {
-	modelData := reflect.ValueOf(model).Elem()
+	modelData := modelReflectValue(model)
 	modelType := modelData.Type()
 
 	for i := 0; i < modelData.NumField(); i++ {
@@ -153,47 +147,18 @@ func modelIDFieldName(model interface{}) (fieldName string) {
 	return
 }
 
-func modelIndices(model interface{}) []int {
-	indices := []int{}
-
-	typeData := reflect.TypeOf(model).Elem()
-	for i := 0; i < typeData.NumField(); i++ {
-		field := typeData.Field(i)
-		tag := field.Tag.Get(`ohm`)
-		if strings.Contains(tag, `index`) {
-			indices = append(indices, i)
-		}
-	}
-
-	return indices
-}
-
-func modelUniques(model interface{}) []int {
-	uniques := []int{}
-
-	typeData := reflect.TypeOf(model).Elem()
-	for i := 0; i < typeData.NumField(); i++ {
-		field := typeData.Field(i)
-		tag := field.Tag.Get(`ohm`)
-		if strings.Contains(tag, `unique`) {
-			uniques = append(uniques, i)
-		}
-	}
-
-	return uniques
-}
-
 func modelSetID(id string, model interface{}) {
-	reflect.ValueOf(model).Elem().FieldByName(modelIDFieldName(model)).SetString(id)
+	modelReflectValue(model).FieldByName(modelIDFieldName(model)).SetString(id)
 }
 
 func modelType(model interface{}) string {
-	return reflect.TypeOf(model).Elem().Name()
+	return modelReflectType(model).Name()
 }
 
 func modelLoadAttrs(attrs []string, model interface{}) {
-	modelData := reflect.ValueOf(model).Elem()
+	modelData := modelReflectValue(model)
 	modelType := modelData.Type()
+	fmt.Printf("Load attrs of type: %s\n", modelType.Name())
 	attrIndexMap := modelAttrIndexMap(model)
 	for i := 0; i < len(attrs); i = i + 2 {
 		attrName := attrs[i]

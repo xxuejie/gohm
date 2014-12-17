@@ -1,8 +1,8 @@
 package gohm
 
 import (
-	`github.com/pote/redisurl`
-	`testing`
+	"github.com/pote/redisurl"
+	"testing"
 )
 
 type user struct {
@@ -115,5 +115,57 @@ func TestDelete(t *testing.T) {
 
 	if found {
 		t.Errorf(`Found is not correct (expected false, was %v)`, found)
+	}
+}
+
+func assertUserPresent(user user, users []user) bool {
+	for i := range users {
+		u := users[i]
+		if user.Name == u.Name && user.Email == u.Email && user.UUID == u.UUID {
+			return true
+		}
+	}
+	return false
+}
+
+func TestAll(t *testing.T) {
+	dbCleanup()
+	defer dbCleanup()
+	gohm, err := NewGohm()
+	if err != nil {
+		t.Error(err)
+	}
+
+	u1 := &user{
+		Name:  `Marty1`,
+		Email: `marty1@mcfly.com`,
+	}
+	err = gohm.Save(u1)
+	if err != nil {
+		t.Error(err)
+	}
+	u2 := &user{
+		Name:  `Marty2`,
+		Email: `marty2@mcfly.com`,
+	}
+	err = gohm.Save(u2)
+	if err != nil {
+		t.Error(err)
+	}
+
+	var users []user
+	err = gohm.All().Fetch(&users)
+	if err != nil {
+		t.Error(err)
+	}
+
+	if len(users) != 2 {
+		t.Errorf(`Expected 2 users, but was %v`, len(users))
+	}
+	if !assertUserPresent(*u1, users) {
+		t.Errorf(`Expected user "%v" to be presented but not`, u1.ID)
+	}
+	if !assertUserPresent(*u2, users) {
+		t.Errorf(`Expected user "%v" to be presented but not`, u2.ID)
 	}
 }

@@ -6,9 +6,13 @@ import (
 	"github.com/pote/go-msgpack"
 	"github.com/pote/redisurl"
 	"reflect"
+	"sync"
 )
 
 type Gohm struct {
+	// Global lock in case we don't have per-type lock
+	sync.Mutex
+
 	RedisPool *redis.Pool
 	LuaSave   *redis.Script
 	LuaDelete *redis.Script
@@ -74,7 +78,10 @@ func (g *Gohm) Save(model interface{}) error {
 	indices := map[string][]string{}
 	indexIndexMap := modelIndexIndexMap(model)
 	for attr, index := range indexIndexMap {
-		indices[attr] = []string{modelData.Field(index).String()}
+		val := modelData.Field(index).String()
+		if len(val) > 0 {
+			indices[attr] = []string{val}
+		}
 	}
 	ohmIndices, err := msgpack.Marshal(indices)
 	if err != nil {
@@ -84,7 +91,10 @@ func (g *Gohm) Save(model interface{}) error {
 	// Prepare Ohm-scripts `uniques` parameter.
 	uniques := map[string]string{}
 	for attr, index := range modelUniqueIndexMap(model) {
-		uniques[attr] = modelData.Field(index).String()
+		val := modelData.Field(index).String()
+		if len(val) > 0 {
+			uniques[attr] = val
+		}
 	}
 	ohmUniques, err := msgpack.Marshal(uniques)
 	if err != nil {
@@ -128,7 +138,10 @@ func (g *Gohm) Delete(model interface{}) error {
 	// Prepare Ohm-scripts `uniques` parameter.
 	uniques := map[string]string{}
 	for attr, index := range modelUniqueIndexMap(model) {
-		uniques[attr] = modelData.Field(index).String()
+		val := modelData.Field(index).String()
+		if len(val) > 0 {
+			uniques[attr] = val
+		}
 	}
 
 	ohmUniques, err := msgpack.Marshal(uniques)
