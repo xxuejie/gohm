@@ -180,8 +180,6 @@ func (g *Gohm) FetchById(model interface{}, id interface{}) (bool, error) {
 		return false, err
 	}
 
-	modelLoadAttrs(attrs, model)
-	// TODO: Support free conversion between string and int for ID field
-	modelSetID(toString(id), model)
+	modelLoadAttrs(append(attrs, "id", toString(id)), model)
 	return true, nil
 }

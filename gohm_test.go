@@ -121,7 +121,8 @@ func TestDelete(t *testing.T) {
 func assertUserPresent(user user, users []user) bool {
 	for i := range users {
 		u := users[i]
-		if user.Name == u.Name && user.Email == u.Email && user.UUID == u.UUID {
+		if user.ID == u.ID && user.Name == u.Name &&
+			user.Email == u.Email && user.UUID == u.UUID {
 			return true
 		}
 	}
@@ -167,5 +168,33 @@ func TestAll(t *testing.T) {
 	}
 	if !assertUserPresent(*u2, users) {
 		t.Errorf(`Expected user "%v" to be presented but not`, u2.ID)
+	}
+}
+
+func TestSingleReturnFromALl(t *testing.T) {
+	dbCleanup()
+	defer dbCleanup()
+	gohm, err := NewGohm()
+	if err != nil {
+		t.Error(err)
+	}
+
+	expected := &user{
+		Name:  `Marty1`,
+		Email: `marty1@mcfly.com`,
+	}
+	err = gohm.Save(expected)
+	if err != nil {
+		t.Error(err)
+	}
+
+	var u user
+	err = gohm.All().Fetch(&u)
+	if err != nil {
+		t.Error(err)
+	}
+
+	if !assertUserPresent(*expected, []user{u}) {
+		t.Errorf(`Expected user "%v" to be presented but not`, expected.ID)
 	}
 }

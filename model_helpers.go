@@ -165,7 +165,9 @@ func modelLoadAttrs(attrs []string, model interface{}) {
 		attrValue := attrs[i+1]
 		attrIndex := attrIndexMap[attrName]
 
-		if modelHasAttribute(model, attrName) {
+		if attrName == "id" {
+			modelSetID(attrValue, model)
+		} else if modelHasAttribute(model, attrName) {
 			attrValueValue := reflect.ValueOf(attrValue)
 			typedAttrValue := attrValueValue.Convert(modelType.Field(attrIndex).Type)
 			modelData.Field(attrIndex).Set(typedAttrValue)

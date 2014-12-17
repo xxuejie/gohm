@@ -39,7 +39,6 @@ func fillResponse(resp [][]string, out interface{}) error {
 func fillValue(resp []string, out reflect.Value) error {
 	switch out.Kind() {
 	case reflect.Ptr:
-		fmt.Printf("PTR:\n")
 		if out.IsNil() {
 			out.Set(reflect.New(out.Type().Elem()))
 		}

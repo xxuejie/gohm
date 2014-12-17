@@ -62,7 +62,7 @@ func (set Set) fetchData() ([][]string, error) {
 		if err != nil {
 			return nil, err
 		}
-		resp[i] = v
+		resp[i] = append(v, "id", ids[i])
 	}
 	return resp, nil
 }
