@@ -227,6 +227,23 @@ func (g *Gohm) Counter(model interface{}, key string) (int64, error) {
 	return redis.Int64(resp, err)
 }
 
+func (g *Gohm) ClearCounter(model interface{}, key string) error {
+	if err := validateModel(model); err != nil {
+		return err
+	}
+	id := modelID(model)
+	if len(id) <= 0 {
+		return MissingIdError
+	}
+
+	conn := g.RedisPool.Get()
+	defer conn.Close()
+
+	_, err := conn.Do(
+		"HDEL", connectKeys(modelType(model), id, "counters"), key)
+	return err
+}
+
 func (g *Gohm) Incr(model interface{}, key string, step int64) (int64, error) {
 	if err := validateModel(model); err != nil {
 		return 0, err

@@ -383,4 +383,17 @@ func TestCounters(t *testing.T) {
 	if c != 1 {
 		t.Errorf("Counter incorrect: expected: 1 actual: %d", c)
 	}
+
+	err = gohm.ClearCounter(u, "hits")
+	if err != nil {
+		t.Error(err)
+	}
+
+	c, err = gohm.Counter(u, "hits")
+	if err != nil {
+		t.Error(err)
+	}
+	if c != 0 {
+		t.Errorf("Counter incorrect: expected: 0 actual: %d", c)
+	}
 }
