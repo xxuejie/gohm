@@ -11,6 +11,7 @@ import (
 var (
 	IndexNotFoundError = errors.New("Index is not found!")
 	NotImplementedError = errors.New("Not implemented!")
+	MissingIdError = errors.New("Missing ID!")
 )
 
 type Gohm struct {
@@ -143,7 +144,7 @@ func (g *Gohm) Delete(model interface{}) error {
 	modelType := modelData.Type()
 	modelId := modelID(model)
 	if modelId == "" {
-		return errors.New("MissingID!")
+		return MissingIdError
 	}
 
 	// Prepare Ohm-scripts `features` parameter.
@@ -204,4 +205,44 @@ func (g *Gohm) FetchById(model interface{}, id interface{}) (bool, error) {
 
 	modelLoadAttrs(append(attrs, "id", toString(id)), model)
 	return true, nil
+}
+
+func (g *Gohm) Counter(model interface{}, key string) (int64, error) {
+	if err := validateModel(model); err != nil {
+		return 0, err
+	}
+	id := modelID(model)
+	if len(id) <= 0 {
+		return 0, MissingIdError
+	}
+
+	conn := g.RedisPool.Get()
+	defer conn.Close()
+
+	resp, err := conn.Do(
+		"HGET", connectKeys(modelType(model), id, "counters"), key)
+	if resp == nil && err == nil {
+		return 0, nil
+	}
+	return redis.Int64(resp, err)
+}
+
+func (g *Gohm) Incr(model interface{}, key string, step int64) (int64, error) {
+	if err := validateModel(model); err != nil {
+		return 0, err
+	}
+	id := modelID(model)
+	if len(id) <= 0 {
+		return 0, MissingIdError
+	}
+
+	conn := g.RedisPool.Get()
+	defer conn.Close()
+
+	return redis.Int64(conn.Do(
+		"HINCRBY", connectKeys(modelType(model), id, "counters"), key, step))
+}
+
+func (g *Gohm) Decr(model interface{}, key string, step int64) (int64, error) {
+	return g.Incr(model, key, - step)
 }

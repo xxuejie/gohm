@@ -326,3 +326,61 @@ func TestUpdate(t *testing.T) {
 		t.Errorf(`incorrect email set (expected "imanemail@example.com", got "%v")`, uu.Name)
 	}
 }
+
+func TestCounters(t *testing.T) {
+	dbCleanup()
+	defer dbCleanup()
+	gohm, err := NewGohm()
+	if err != nil {
+		t.Error(err)
+	}
+
+	u := &user{
+		Name:  `Marty1`,
+		Email: `marty1@mcfly.com`,
+	}
+	err = gohm.Save(u)
+	if err != nil {
+		t.Error(err)
+	}
+
+	c, err := gohm.Counter(u, "hits")
+	if err != nil {
+		t.Error(err)
+	}
+	if c != 0 {
+		t.Errorf("Counter incorrect: expected: 0 actual: %d", c)
+	}
+
+	c, err = gohm.Incr(u, "hits", 3)
+	if err != nil {
+		t.Error(err)
+	}
+	if c != 3 {
+		t.Errorf("Counter incorrect: expected: 3 actual: %d", c)
+	}
+
+	c, err = gohm.Counter(u, "hits")
+	if err != nil {
+		t.Error(err)
+	}
+	if c != 3 {
+		t.Errorf("Counter incorrect: expected: 3 actual: %d", c)
+	}
+
+	c, err = gohm.Decr(u, "hits", 2)
+	if err != nil {
+		t.Error(err)
+	}
+	if c != 1 {
+		t.Errorf("Counter incorrect: expected: 1 actual: %d", c)
+	}
+
+	c, err = gohm.Counter(u, "hits")
+	if err != nil {
+		t.Error(err)
+	}
+	if c != 1 {
+		t.Errorf("Counter incorrect: expected: 1 actual: %d", c)
+	}
+}
