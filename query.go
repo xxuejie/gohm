@@ -35,6 +35,12 @@ func (q query) filters() ([]string, error) {
 	return ret, nil
 }
 
+func (q query) FetchByIds(v interface{}, ids []interface{}) error {
+	q.ModelType = fetchTypeFromReturnInterface(v)
+	modelName := q.ModelType.Name()
+	return NewSet(q.G, connectKeys(modelName, "all"), modelName).FetchByIds(v, ids)
+}
+
 func (q query) Fetch(v interface{}) error {
 	q.ModelType = fetchTypeFromReturnInterface(v)
 	modelName := q.ModelType.Name()

@@ -237,3 +237,92 @@ func TestFilter(t *testing.T) {
 		t.Errorf(`Expected user "%v" to be presented but not`, u2.ID)
 	}
 }
+
+func TestFetchByIds(t *testing.T) {
+	dbCleanup()
+	defer dbCleanup()
+	gohm, err := NewGohm()
+	if err != nil {
+		t.Error(err)
+	}
+
+	u1 := &user{
+		Name:  `Marty1`,
+		Email: `marty1@mcfly.com`,
+	}
+	err = gohm.Save(u1)
+	if err != nil {
+		t.Error(err)
+	}
+	u2 := &user{
+		Name:  `Marty2`,
+		Email: `marty2@mcfly.com`,
+	}
+	err = gohm.Save(u2)
+	if err != nil {
+		t.Error(err)
+	}
+
+	var users []user
+	err = gohm.All().FetchByIds(&users, []interface{}{u1.ID, u2.ID})
+	if err != nil {
+		t.Error(err)
+	}
+
+	if len(users) != 2 {
+		t.Errorf(`Expected 1 user, but was %v`, len(users))
+	}
+	if !assertUserPresent(*u1, users) {
+		t.Errorf(`Expected user "%v" to be presented but not`, u1.ID)
+	}
+	if !assertUserPresent(*u2, users) {
+		t.Errorf(`Expected user "%v" to be presented but not`, u2.ID)
+	}
+}
+
+func TestUpdate(t *testing.T) {
+	dbCleanup()
+	defer dbCleanup()
+	gohm, err := NewGohm()
+	if err != nil {
+		t.Error(err)
+	}
+
+	u := &user{
+		Name:  `Marty1`,
+		Email: `marty1@mcfly.com`,
+	}
+	err = gohm.Save(u)
+	if err != nil {
+		t.Error(err)
+	}
+
+	attrs := map[string]interface{}{
+		"name": "Marty2",
+		"email": "imanemail@example.com",
+	}
+	err = gohm.Update(u, attrs)
+	if err != nil {
+		t.Error(err)
+	}
+
+	if u.Name != "Marty2" {
+		t.Errorf(`incorrect Name set (expected "Marty", got "%v")`, u.Name)
+	}
+	if u.Email != "imanemail@example.com" {
+		t.Errorf(`incorrect email set (expected "imanemail@example.com", got "%v")`, u.Name)
+	}
+
+	// Fetch it again to make sure our changes are reflected in DB
+	uu := &user{}
+	_, err = gohm.FetchById(uu, u.ID)
+	if err != nil {
+		t.Error(err)
+	}
+	if uu.Name != "Marty2" {
+		t.Errorf(`incorrect Name set (expected "Marty", got "%v")`, uu.Name)
+	}
+	if uu.Email != "imanemail@example.com" {
+		t.Errorf(`incorrect email set (expected "imanemail@example.com", got "%v")`, uu.Name)
+	}
+}

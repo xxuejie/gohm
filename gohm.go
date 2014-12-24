@@ -116,6 +116,24 @@ func (g *Gohm) Save(model interface{}) error {
 	return nil
 }
 
+func (g *Gohm) Update(model interface{}, attrs map[string]interface{}) error {
+	if err := validateModel(model); err != nil {
+		return err
+	}
+
+	arr := make([]string, len(attrs) * 2)
+	i := 0
+	for k, v := range attrs {
+		arr[i] = k
+		i = i + 1
+		arr[i] = toString(v)
+		i = i + 1
+	}
+
+	modelLoadAttrs(arr, model)
+	return g.Save(model)
+}
+
 func (g *Gohm) Delete(model interface{}) error {
 	if err := validateModel(model); err != nil {
 		return err

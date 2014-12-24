@@ -41,17 +41,13 @@ func (set Set) Ids() ([]string, error) {
 	return redis.Strings(c.Do("SMEMBERS", set.Key))
 }
 
-func (set Set) fetchData() ([][]string, error) {
+func (set Set) fetchData(ids []interface{}) ([][]string, error) {
 	// TODO: Add per-type lock
 	set.G.Lock()
 	defer set.G.Unlock()
 	c := set.G.RedisPool.Get()
 	defer c.Close()
 
-	ids, err := set.Ids()
-	if err != nil {
-		return nil, err
-	}
 	for i := range ids {
 		c.Send("HGETALL", connectKeys(set.Namespace, ids[i]))
 	}
@@ -62,15 +58,27 @@ func (set Set) fetchData() ([][]string, error) {
 		if err != nil {
 			return nil, err
 		}
-		resp[i] = append(v, "id", ids[i])
+		resp[i] = append(v, "id", toString(ids[i]))
 	}
 	return resp, nil
 }
 
-func (set Set) Fetch(out interface{}) error {
-	resp, err := set.fetchData()
+func (set Set) FetchByIds(out interface{}, ids []interface{}) error {
+	resp, err := set.fetchData(ids)
 	if err != nil {
 		return err
 	}
 	return fillResponse(resp, out)
+}
+
+func (set Set) Fetch(out interface{}) error {
+	ids, err := set.Ids()
+	if err != nil {
+		return err
+	}
+	interfaceIds := make([]interface{}, len(ids))
+	for i := range ids {
+		interfaceIds[i] = ids[i]
+	}
+	return set.FetchByIds(out, interfaceIds)
 }
