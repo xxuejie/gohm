@@ -6,7 +6,7 @@ import (
 
 type query struct {
 	G       *Gohm
-	ModelType reflect.Type
+	ValueModel   interface{}
 	Queries map[string]interface{}
 }
 
@@ -23,16 +23,16 @@ func (q query) Find(k string, v interface{}) query {
 }
 
 func (q query) Model(v interface{}) query {
-	q.ModelType = fetchTypeFromReturnInterface(v)
+	q.ValueModel = v
 	return q
 }
 
-func (q query) filters() ([]string, error) {
-	modelName := q.ModelType.Name()
+func (q query) filters(modelType reflect.Type) ([]string, error) {
+	modelName := modelType.Name()
 	ret := make([]string, 0)
 	for k, v := range q.Queries {
 		// TODO: right now we only support one query value per key
-		if !modelHasIndex(q.ModelType, k) {
+		if !modelHasIndex(modelType, k) {
 			return nil, IndexNotFoundError
 		}
 		ret = append(ret, connectKeys(modelName, "indices", k, v))
@@ -41,11 +41,16 @@ func (q query) filters() ([]string, error) {
 }
 
 func (q query) Set() (Set, error) {
-	if q.ModelType == nil {
+	if q.ValueModel == nil {
 		return Set{}, ModelTypeUnknownError
 	}
-	modelName := q.ModelType.Name()
-	filters, err := q.filters()
+	// TODO: Add validation here once we figure out how to deal with slice
+	// if err := validateModel(q.ValueModel); err != nil {
+	// 	return Set{}, err
+	// }
+	modelType := fetchTypeFromReturnInterface(q.ValueModel)
+	modelName := modelType.Name()
+	filters, err := q.filters(modelType)
 	if err != nil {
 		return Set{}, err
 	}
