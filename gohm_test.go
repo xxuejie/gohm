@@ -396,4 +396,77 @@ func TestCounters(t *testing.T) {
 	if c != 0 {
 		t.Errorf("Counter incorrect: expected: 0 actual: %d", c)
 	}
+
+	err = gohm.SetCounter(u, "hits", 42)
+	if err != nil {
+		t.Error(err)
+	}
+
+	c, err = gohm.Counter(u, "hits")
+	if err != nil {
+		t.Error(err)
+	}
+	if c != 42 {
+		t.Errorf("Counter incorrect: expected: 42 actual: %d", c)
+	}
+}
+
+func TestSize(t *testing.T) {
+	dbCleanup()
+	defer dbCleanup()
+	gohm, err := NewGohm()
+	if err != nil {
+		t.Error(err)
+	}
+
+	u := &user{
+		Name:  `Marty1`,
+		Email: `marty1@mcfly.com`,
+	}
+	err = gohm.Save(u)
+	if err != nil {
+		t.Error(err)
+	}
+
+	s, err := gohm.All().Model(&user{}).Size()
+	if err != nil {
+		t.Error(err)
+	}
+	if s != 1 {
+		t.Errorf("Size incorrect: expected: 1 actual: %d", s)
+	}
+}
+
+func TestExists(t *testing.T) {
+	dbCleanup()
+	defer dbCleanup()
+	gohm, err := NewGohm()
+	if err != nil {
+		t.Error(err)
+	}
+
+	u := &user{
+		Name:  `Marty1`,
+		Email: `marty1@mcfly.com`,
+	}
+	err = gohm.Save(u)
+	if err != nil {
+		t.Error(err)
+	}
+
+	exists, err := gohm.All().Model(&user{}).Exists("1")
+	if err != nil {
+		t.Error(err)
+	}
+	if !exists {
+		t.Errorf("Expected model exists but not!")
+	}
+
+	exists, err = gohm.All().Model(&user{}).Exists("2")
+	if err != nil {
+		t.Error(err)
+	}
+	if exists {
+		t.Errorf("Expected model not exists but exists!")
+	}
 }

@@ -19,9 +19,6 @@ func NewSet(g *Gohm, key string, namespace string) Set {
 }
 
 func (set Set) Include(model interface{}) (bool, error) {
-	if err := validateModel(model); err != nil {
-		return false, err
-	}
 	return set.Exists(modelID(model))
 }
 
@@ -40,6 +37,13 @@ func (set Set) Ids() ([]string, error) {
 	defer c.Close()
 	return redis.Strings(c.Do("SMEMBERS", set.Key))
 }
+
+func (set Set) Size() (int, error) {
+	c := set.G.RedisPool.Get()
+	defer c.Close()
+	return redis.Int(c.Do("SCARD", set.Key))
+}
+
 
 func (set Set) fetchData(ids []interface{}) ([][]string, error) {
 	// TODO: Add per-type lock

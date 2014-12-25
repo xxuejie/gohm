@@ -12,6 +12,7 @@ var (
 	IndexNotFoundError = errors.New("Index is not found!")
 	NotImplementedError = errors.New("Not implemented!")
 	MissingIdError = errors.New("Missing ID!")
+	ModelTypeUnknownError = errors.New("Model type is unknown!")
 )
 
 type Gohm struct {
@@ -227,7 +228,7 @@ func (g *Gohm) Counter(model interface{}, key string) (int64, error) {
 	return redis.Int64(resp, err)
 }
 
-func (g *Gohm) ClearCounter(model interface{}, key string) error {
+func (g *Gohm) SetCounter(model interface{}, key string, val int64) error {
 	if err := validateModel(model); err != nil {
 		return err
 	}
@@ -240,8 +241,12 @@ func (g *Gohm) ClearCounter(model interface{}, key string) error {
 	defer conn.Close()
 
 	_, err := conn.Do(
-		"HDEL", connectKeys(modelType(model), id, "counters"), key)
+		"HSET", connectKeys(modelType(model), id, "counters"), key, val)
 	return err
+}
+
+func (g *Gohm) ClearCounter(model interface{}, key string) error {
+	return g.SetCounter(model, key, 0)
 }
 
 func (g *Gohm) Incr(model interface{}, key string, step int64) (int64, error) {
