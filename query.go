@@ -88,6 +88,14 @@ func (q query) Size() (int, error) {
 	return SetSize(set)
 }
 
+func (q query) Empty() (bool, error) {
+	size, err := q.Size()
+	if err != nil {
+		return false, err
+	}
+	return size == 0, nil
+}
+
 func (q query) Exists(id interface{}) (bool, error) {
 	set, err := q.Set()
 	if err != nil {

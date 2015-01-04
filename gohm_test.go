@@ -437,6 +437,41 @@ func TestSize(t *testing.T) {
 	}
 }
 
+func TestEmpty(t *testing.T) {
+	dbCleanup()
+	defer dbCleanup()
+	gohm, err := NewGohm()
+	if err != nil {
+		t.Error(err)
+	}
+
+	empty, err := gohm.All().Model(&user{}).Empty()
+	if err != nil {
+		t.Error(err)
+	}
+
+	if !empty {
+		t.Error("Expected empty but not!")
+	}
+
+	u := &user{
+		Name:  `Marty1`,
+		Email: `marty1@mcfly.com`,
+	}
+	err = gohm.Save(u)
+	if err != nil {
+		t.Error(err)
+	}
+
+	empty, err = gohm.All().Model(&user{}).Empty()
+	if err != nil {
+		t.Error(err)
+	}
+	if empty {
+		t.Errorf("Expected not empty but empty!")
+	}
+}
+
 func TestExists(t *testing.T) {
 	dbCleanup()
 	defer dbCleanup()
