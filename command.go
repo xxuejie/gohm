@@ -14,16 +14,16 @@ type SimpleCommand struct {
 }
 
 func NewSimpleCommand(key string) Command {
-	return SimpleCommand{
+	return &SimpleCommand{
 		Key: key,
 	}
 }
 
-func (c SimpleCommand) Call(prefix string, conn redis.Conn) (string, error) {
+func (c *SimpleCommand) Call(prefix string, conn redis.Conn) (string, error) {
 	return c.Key, nil
 }
 
-func (c SimpleCommand) Clean() error {
+func (c *SimpleCommand) Clean() error {
 	return nil
 }
 
@@ -38,7 +38,7 @@ func NewCommandWithSubs(op string, argument ...Command) Command {
 	if len(argument) == 1 {
 		return argument[0]
 	}
-	command := CompositeCommand{
+	command := &CompositeCommand{
 		Operation: op,
 		Arguments: make([]Command, len(argument)),
 	}
@@ -46,7 +46,7 @@ func NewCommandWithSubs(op string, argument ...Command) Command {
 	return command
 }
 
-func (c CompositeCommand) Call(prefix string, conn redis.Conn) (string, error) {
+func (c *CompositeCommand) Call(prefix string, conn redis.Conn) (string, error) {
 	suffix, err := generateRandomHexString(32)
 	if err != nil {
 		return "", err
@@ -68,7 +68,7 @@ func (c CompositeCommand) Call(prefix string, conn redis.Conn) (string, error) {
 	return c.Key, nil
 }
 
-func (c CompositeCommand) Clean() error {
+func (c *CompositeCommand) Clean() error {
 	if len(c.Key) > 0 && c.KeyConn != nil {
 		_, err := c.KeyConn.Do("DEL", c.Key)
 		if err != nil {

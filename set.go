@@ -26,6 +26,14 @@ func getConnAndKey(set BasicSet) (redis.Conn, string, error) {
 	return c, key, nil
 }
 
+func cleanAndClose(set BasicSet, conn redis.Conn) error {
+	err := set.Clean()
+	if err != nil {
+		return err
+	}
+	return conn.Close()
+}
+
 func SetInclude(set BasicSet, model interface{}) (bool, error) {
 	return SetExists(set, modelID(model))
 }
@@ -35,7 +43,7 @@ func SetExists(set BasicSet, id interface{}) (bool, error) {
 	if err != nil {
 		return false, err
 	}
-	defer c.Close()
+	defer cleanAndClose(set, c)
 	ret, err := redis.Int(c.Do("SISMEMBER", key, toString(id)))
 	if err != nil {
 		return false, err
@@ -48,7 +56,7 @@ func SetIds(set BasicSet) ([]string, error) {
 	if err != nil {
 		return nil, err
 	}
-	defer c.Close()
+	defer cleanAndClose(set, c)
 	return redis.Strings(c.Do("SMEMBERS", key))
 }
 
@@ -57,7 +65,7 @@ func SetSize(set BasicSet) (int, error) {
 	if err != nil {
 		return 0, err
 	}
-	defer c.Close()
+	defer cleanAndClose(set, c)
 	return redis.Int(c.Do("SCARD", key))
 }
 
