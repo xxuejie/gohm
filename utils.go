@@ -1,6 +1,8 @@
 package gohm
 
 import (
+	"crypto/rand"
+	"encoding/hex"
 	"fmt"
 	"strings"
 )
@@ -10,7 +12,7 @@ func toString(v interface{}) string {
 }
 
 // Works like https://github.com/soveran/nido
-func connectKeys(keys ... interface{}) string {
+func connectKeys(keys ...interface{}) string {
 	strs := make([]string, len(keys))
 	for i := range keys {
 		strs[i] = toString(keys[i])
@@ -25,4 +27,22 @@ func stringInSlice(a string, list []string) bool {
 		}
 	}
 	return false
+}
+
+func generateRandomBytes(n int) ([]byte, error) {
+	b := make([]byte, n)
+	_, err := rand.Read(b)
+	if err != nil {
+		return nil, err
+	}
+
+	return b, nil
+}
+
+func generateRandomHexString(n int) (string, error) {
+	b, err := generateRandomBytes(n)
+	if err != nil {
+		return "", err
+	}
+	return hex.EncodeToString(b), nil
 }

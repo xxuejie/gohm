@@ -7,7 +7,7 @@ import (
 
 type user struct {
 	ID    string `ohm:"id"`
-	Name  string `ohm:"name"`
+	Name  string `ohm:"name index"`
 	Email string `ohm:"email index"`
 	UUID  string `ohm:"uuid unique"`
 	//Friends []user `ohm:"collection"`
@@ -298,7 +298,7 @@ func TestUpdate(t *testing.T) {
 	}
 
 	attrs := map[string]interface{}{
-		"name": "Marty2",
+		"name":  "Marty2",
 		"email": "imanemail@example.com",
 	}
 	err = gohm.Update(u, attrs)
@@ -468,5 +468,44 @@ func TestExists(t *testing.T) {
 	}
 	if exists {
 		t.Errorf("Expected model not exists but exists!")
+	}
+}
+
+func TestMultipleFilter(t *testing.T) {
+	dbCleanup()
+	defer dbCleanup()
+	gohm, err := NewGohm()
+	if err != nil {
+		t.Error(err)
+	}
+
+	u1 := &user{
+		Name:  `Marty2`,
+		Email: `marty1@mcfly.com`,
+	}
+	err = gohm.Save(u1)
+	if err != nil {
+		t.Error(err)
+	}
+	u2 := &user{
+		Name:  `Marty2`,
+		Email: `marty2@mcfly.com`,
+	}
+	err = gohm.Save(u2)
+	if err != nil {
+		t.Error(err)
+	}
+
+	var users []user
+	err = gohm.All().Find("name", "Marty2").Find("email", "marty2@mcfly.com").Fetch(&users)
+	if err != nil {
+		t.Error(err)
+	}
+
+	if len(users) != 1 {
+		t.Errorf(`Expected 1 user, but was %v`, len(users))
+	}
+	if !assertUserPresent(*u2, users) {
+		t.Errorf(`Expected user "%v" to be presented but not`, u2.ID)
 	}
 }

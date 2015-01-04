@@ -5,9 +5,9 @@ import (
 )
 
 type query struct {
-	G       *Gohm
-	ValueModel   interface{}
-	Queries map[string]interface{}
+	G          *Gohm
+	ValueModel interface{}
+	Queries    map[string]interface{}
 }
 
 func (g *Gohm) All() query {
@@ -40,9 +40,9 @@ func (q query) filters(modelType reflect.Type) ([]string, error) {
 	return ret, nil
 }
 
-func (q query) Set() (Set, error) {
+func (q query) Set() (BasicSet, error) {
 	if q.ValueModel == nil {
-		return Set{}, ModelTypeUnknownError
+		return nil, ModelTypeUnknownError
 	}
 	// TODO: Add validation here once we figure out how to deal with slice
 	// if err := validateModel(q.ValueModel); err != nil {
@@ -60,7 +60,7 @@ func (q query) Set() (Set, error) {
 	case 1:
 		return NewSet(q.G, filters[0], modelName), nil
 	default:
-		return Set{}, NotImplementedError
+		return NewMultiSet(q.G, modelName, NewCommand("sinterstore", filters...)), nil
 	}
 }
 
@@ -69,7 +69,7 @@ func (q query) FetchByIds(v interface{}, ids []interface{}) error {
 	if err != nil {
 		return err
 	}
-	return set.FetchByIds(v, ids)
+	return SetFetchByIds(set, v, ids)
 }
 
 func (q query) Fetch(v interface{}) error {
@@ -77,7 +77,7 @@ func (q query) Fetch(v interface{}) error {
 	if err != nil {
 		return err
 	}
-	return set.Fetch(v)
+	return SetFetch(set, v)
 }
 
 func (q query) Size() (int, error) {
@@ -85,7 +85,7 @@ func (q query) Size() (int, error) {
 	if err != nil {
 		return 0, err
 	}
-	return set.Size()
+	return SetSize(set)
 }
 
 func (q query) Exists(id interface{}) (bool, error) {
@@ -93,7 +93,7 @@ func (q query) Exists(id interface{}) (bool, error) {
 	if err != nil {
 		return false, err
 	}
-	return set.Exists(id)
+	return SetExists(set, id)
 }
 
 func (q query) Include(v interface{}) (bool, error) {
@@ -101,5 +101,5 @@ func (q query) Include(v interface{}) (bool, error) {
 	if err != nil {
 		return false, err
 	}
-	return set.Include(v)
+	return SetInclude(set, v)
 }
