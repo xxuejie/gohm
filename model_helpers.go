@@ -26,6 +26,10 @@ func validateModel(model interface{}) error {
 	}
 
 	for i := 0; i < modelData.NumField(); i++ {
+		if len(modelType.Field(i).Tag.Get("ohm")) <= 0 {
+			continue
+		}
+
 		if !modelData.Field(i).CanSet() {
 			return NonExportedAttrError
 		}
