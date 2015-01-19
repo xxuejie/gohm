@@ -128,7 +128,6 @@ func NewSet(g *Gohm, key string, namespace string, model reflect.Type) Set {
 }
 
 func (set Set) Lock() {
-	// TODO: Add per-type lock
 	set.G.Lock(set.Model.Name())
 }
 
