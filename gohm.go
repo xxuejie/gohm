@@ -16,12 +16,12 @@ var (
 )
 
 type Gohm struct {
-	// Global lock in case we don't have per-type lock
-	sync.Mutex
-
 	RedisPool *redis.Pool
 	LuaSave   *redis.Script
 	LuaDelete *redis.Script
+
+	TypeLocks map[string]*sync.Mutex
+	TypeLockLock sync.Mutex
 }
 
 func NewGohm(r ...*redis.Pool) (*Gohm, error) {
@@ -44,6 +44,8 @@ func NewGohmWithPool(pool *redis.Pool) *Gohm {
 
 	g.LuaSave = redis.NewScript(0, LUA_SAVE)
 	g.LuaDelete = redis.NewScript(0, LUA_DELETE)
+
+	g.TypeLocks = make(map[string]*sync.Mutex)
 
 	return g
 }

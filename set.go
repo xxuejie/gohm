@@ -1,6 +1,7 @@
 package gohm
 
 import (
+	"reflect"
 	"sync"
 
 	"github.com/garyburd/redigo/redis"
@@ -114,23 +115,25 @@ type Set struct {
 	G         *Gohm
 	Key       string
 	Namespace string
+	Model     reflect.Type
 }
 
-func NewSet(g *Gohm, key string, namespace string) Set {
+func NewSet(g *Gohm, key string, namespace string, model reflect.Type) Set {
 	return Set{
 		G:         g,
 		Key:       key,
 		Namespace: namespace,
+		Model:     model,
 	}
 }
 
 func (set Set) Lock() {
 	// TODO: Add per-type lock
-	set.G.Lock()
+	set.G.Lock(set.Model.Name())
 }
 
 func (set Set) Unlock() {
-	set.G.Unlock()
+	set.G.Unlock(set.Model.Name())
 }
 
 func (set Set) GetConn() redis.Conn {
@@ -152,23 +155,25 @@ func (set Set) GetNamespace() string {
 type MultiSet struct {
 	G         *Gohm
 	Namespace string
+	Model     reflect.Type
 	Command   Command
 }
 
-func NewMultiSet(g *Gohm, namespace string, command Command) MultiSet {
+func NewMultiSet(g *Gohm, namespace string, model reflect.Type, command Command) MultiSet {
 	return MultiSet{
 		G:         g,
 		Namespace: namespace,
+		Model:     model,
 		Command:   command,
 	}
 }
 
 func (set MultiSet) Lock() {
-	set.G.Lock()
+	set.G.Lock(set.Model.Name())
 }
 
 func (set MultiSet) Unlock() {
-	set.G.Unlock()
+	set.G.Unlock(set.Model.Name())
 }
 
 func (set MultiSet) GetConn() redis.Conn {

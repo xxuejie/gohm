@@ -54,11 +54,11 @@ func (q query) Set() (BasicSet, error) {
 	}
 	switch len(filters) {
 	case 0:
-		return NewSet(q.G, connectKeys(modelName, "all"), modelName), nil
+		return NewSet(q.G, connectKeys(modelName, "all"), modelName, modelType), nil
 	case 1:
-		return NewSet(q.G, filters[0], modelName), nil
+		return NewSet(q.G, filters[0], modelName, modelType), nil
 	default:
-		return NewMultiSet(q.G, modelName, NewCommand("sinterstore", filters...)), nil
+		return NewMultiSet(q.G, modelName, modelType, NewCommand("sinterstore", filters...)), nil
 	}
 }
 
