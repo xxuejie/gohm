@@ -31,7 +31,6 @@ func (q query) filters(modelType reflect.Type) ([]string, error) {
 	modelName := modelType.Name()
 	ret := make([]string, 0)
 	for k, v := range q.Queries {
-		// TODO: right now we only support one query value per key
 		if !modelHasIndex(modelType, k) {
 			return nil, IndexNotFoundError
 		}
@@ -44,11 +43,10 @@ func (q query) Set() (BasicSet, error) {
 	if q.ValueModel == nil {
 		return nil, ModelTypeUnknownError
 	}
-	// TODO: Add validation here once we figure out how to deal with slice
-	// if err := validateModel(q.ValueModel); err != nil {
-	// 	return Set{}, err
-	// }
 	modelType := fetchTypeFromReturnInterface(q.ValueModel)
+	if err := validateModel(reflect.New(modelType).Interface()); err != nil {
+		return Set{}, err
+	}
 	modelName := modelType.Name()
 	filters, err := q.filters(modelType)
 	if err != nil {
