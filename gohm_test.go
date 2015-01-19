@@ -1,6 +1,7 @@
 package gohm
 
 import (
+	"fmt"
 	"github.com/pote/redisurl"
 	"testing"
 )
@@ -542,5 +543,42 @@ func TestMultipleFilter(t *testing.T) {
 	}
 	if !assertUserPresent(*u2, users) {
 		t.Errorf(`Expected user "%v" to be presented but not`, u2.ID)
+	}
+}
+
+func TestCallback(t *testing.T) {
+	dbCleanup()
+	defer dbCleanup()
+	gohm, err := NewBuilder().WithCallback(user{}, func(model interface{}, attrs *map[string]string) {
+		p := model.(*user)
+		(*attrs)["email"] = fmt.Sprintf("%s.co", p.Email)
+	}).Build()
+	if err != nil {
+		t.Error(err)
+	}
+
+	u := &user{
+		Name:  `Marty2`,
+		Email: `marty1@mcfly.com`,
+	}
+
+	err = gohm.Save(u)
+	if err != nil {
+		t.Error(err)
+	}
+
+	uu := &user{}
+	found, err := gohm.FetchById(uu, u.ID)
+
+	if err != nil {
+		t.Error(err)
+	}
+
+	if !found {
+		t.Errorf(`Found is not correct (expected true, was %v)`, found)
+	}
+
+	if uu.Email != "marty1@mcfly.com.co" {
+		t.Errorf(`Incorrect email set (expected "marty1@mcfly.com.co", got "%v")`, uu.Email)
 	}
 }

@@ -2,10 +2,10 @@ package gohm
 
 import (
 	"errors"
+	"sync"
+
 	"github.com/garyburd/redigo/redis"
 	"github.com/pote/go-msgpack"
-	"github.com/pote/redisurl"
-	"sync"
 )
 
 var (
@@ -22,32 +22,21 @@ type Gohm struct {
 
 	TypeLocks map[string]*sync.Mutex
 	TypeLockLock sync.Mutex
+
+	Callbacks map[string][]CallbackFunc
 }
 
+// This is mainly here to preserve compatibility
 func NewGohm(r ...*redis.Pool) (*Gohm, error) {
 	if len(r) < 1 {
-		pool, err := redisurl.NewPool(3, 200, "240s")
-		if err != nil {
-			return &Gohm{}, err
-		}
-
-		return NewGohmWithPool(pool), nil
+		return NewGohmWithPool(nil)
 	} else {
-		return NewGohmWithPool(r[0]), nil
+		return NewGohmWithPool(r[0])
 	}
 }
 
-func NewGohmWithPool(pool *redis.Pool) *Gohm {
-	g := &Gohm{
-		RedisPool: pool,
-	}
-
-	g.LuaSave = redis.NewScript(0, LUA_SAVE)
-	g.LuaDelete = redis.NewScript(0, LUA_DELETE)
-
-	g.TypeLocks = make(map[string]*sync.Mutex)
-
-	return g
+func NewGohmWithPool(pool *redis.Pool) (*Gohm, error) {
+	return NewBuilder().WithPool(pool).Build()
 }
 
 func (g *Gohm) Save(model interface{}) error {
@@ -57,6 +46,13 @@ func (g *Gohm) Save(model interface{}) error {
 
 	modelData := modelReflectValue(model)
 	modelType := modelData.Type()
+
+	callbackAttrs := make(map[string]string)
+	callbacks := g.fetchSaveCallbacksFromMap(modelType)
+	for i := range callbacks {
+		callback := callbacks[i]
+		callback(model, &callbackAttrs)
+	}
 
 	// Prepare Ohm-scripts `features` parameter.
 	features := map[string]string{
@@ -75,7 +71,7 @@ func (g *Gohm) Save(model interface{}) error {
 	attrIndexMap := modelAttrIndexMap(modelType)
 	for attr, index := range attrIndexMap {
 		attrs = append(attrs, attr)
-		attrs = append(attrs, modelData.Field(index).String())
+		attrs = append(attrs, pickData(attr, index, callbackAttrs, modelData))
 	}
 	ohmAttrs, err := msgpack.Marshal(attrs)
 	if err != nil {
@@ -86,7 +82,7 @@ func (g *Gohm) Save(model interface{}) error {
 	indices := map[string][]string{}
 	indexIndexMap := modelIndexIndexMap(modelType)
 	for attr, index := range indexIndexMap {
-		val := modelData.Field(index).String()
+		val := pickData(attr, index, callbackAttrs, modelData)
 		if len(val) > 0 {
 			indices[attr] = []string{val}
 		}
@@ -99,7 +95,7 @@ func (g *Gohm) Save(model interface{}) error {
 	// Prepare Ohm-scripts `uniques` parameter.
 	uniques := map[string]string{}
 	for attr, index := range modelUniqueIndexMap(modelType) {
-		val := modelData.Field(index).String()
+		val := pickData(attr, index, callbackAttrs, modelData)
 		if len(val) > 0 {
 			uniques[attr] = val
 		}
