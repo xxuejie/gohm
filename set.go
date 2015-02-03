@@ -61,6 +61,18 @@ func SetIds(set BasicSet) ([]string, error) {
 	return redis.Strings(c.Do("SMEMBERS", key))
 }
 
+func SetSortIds(set BasicSet, sortArgs []interface{}) ([]string, error) {
+	c, key, err := getConnAndKey(set)
+	if err != nil {
+		return nil, err
+	}
+	defer cleanAndClose(set, c)
+	args := make([]interface{}, 0)
+	args = append(args, key)
+	args = append(args, sortArgs...)
+	return redis.Strings(c.Do("SORT", args...))
+}
+
 func SetSize(set BasicSet) (int, error) {
 	c, key, err := getConnAndKey(set)
 	if err != nil {
@@ -101,6 +113,18 @@ func SetFetchByIds(set BasicSet, out interface{}, ids []interface{}) error {
 
 func SetFetch(set BasicSet, out interface{}) error {
 	ids, err := SetIds(set)
+	if err != nil {
+		return err
+	}
+	interfaceIds := make([]interface{}, len(ids))
+	for i := range ids {
+		interfaceIds[i] = ids[i]
+	}
+	return SetFetchByIds(set, out, interfaceIds)
+}
+
+func SetSort(set BasicSet, out interface{}, sortArgs []interface{}) error {
+	ids, err := SetSortIds(set, sortArgs)
 	if err != nil {
 		return err
 	}

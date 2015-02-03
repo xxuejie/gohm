@@ -271,7 +271,7 @@ func TestFetchByIds(t *testing.T) {
 	}
 
 	if len(users) != 2 {
-		t.Errorf(`Expected 1 user, but was %v`, len(users))
+		t.Errorf(`Expected 2 users, but was %v`, len(users))
 	}
 	if !assertUserPresent(*u1, users) {
 		t.Errorf(`Expected user "%v" to be presented but not`, u1.ID)
@@ -580,5 +580,75 @@ func TestCallback(t *testing.T) {
 
 	if uu.Email != "marty1@mcfly.com.co" {
 		t.Errorf(`Incorrect email set (expected "marty1@mcfly.com.co", got "%v")`, uu.Email)
+	}
+}
+
+func TestSort(t *testing.T) {
+	dbCleanup()
+	defer dbCleanup()
+	gohm, err := NewGohm()
+	if err != nil {
+		t.Error(err)
+	}
+
+	u1 := &user{
+		Name:  `Marty1`,
+		Email: `marty1@mcfly.com`,
+	}
+	err = gohm.Save(u1)
+	if err != nil {
+		t.Error(err)
+	}
+
+	u2 := &user{
+		Name:  `Marty2`,
+		Email: `marty2@mcfly.com`,
+	}
+	err = gohm.Save(u2)
+	if err != nil {
+		t.Error(err)
+	}
+
+	u3 := &user{
+		Name:  `Marty3`,
+		Email: `marty3@mcfly.com`,
+	}
+	err = gohm.Save(u3)
+	if err != nil {
+		t.Error(err)
+	}
+
+	u4 := &user{
+		Name:  `Marty4`,
+		Email: `marty4@mcfly.com`,
+	}
+	err = gohm.Save(u4)
+	if err != nil {
+		t.Error(err)
+	}
+
+	u5 := &user{
+		Name:  `Marty5`,
+		Email: `marty5@mcfly.com`,
+	}
+	err = gohm.Save(u5)
+	if err != nil {
+		t.Error(err)
+	}
+
+	var users []user
+	err = gohm.All().Sort().Order("DESC").Limit(2, 2).Fetch(&users)
+	if err != nil {
+		t.Error(err)
+	}
+
+	if len(users) != 2 {
+		t.Errorf(`Expected 2 users, but was %v`, len(users))
+	}
+	if users[0].ID != u3.ID {
+		t.Errorf(`Expected user "%v" to be presented but not`, u3.ID)
+	}
+	if users[1].ID != u2.ID {
+		t.Errorf(`Expected user "%v" to be presented but not`, u2.ID)
 	}
 }
