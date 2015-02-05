@@ -104,6 +104,18 @@ func TestModelWithSet(t *testing.T) {
 	}
 }
 
+func TestModelTrackedKeys(t *testing.T) {
+	attrs := modelTrackedKeys(reflect.ValueOf(setModel{}).Type())
+
+	expectedAttrs := []string{
+		"friends",
+	}
+
+	if !reflect.DeepEqual(expectedAttrs, attrs) {
+		t.Errorf(`expected %v, got %v`, expectedAttrs, attrs)
+	}
+}
+
 func TestModelID(t *testing.T) {
 	u := &validModel{}
 	u2 := &validModel{ID: `2`}
