@@ -26,10 +26,17 @@ type nonStringIDModel struct {
 }
 
 type LocalVarModel struct {
-	ID    string `ohm:"id"`
-	Name  string `ohm:"name"`
+	ID   string `ohm:"id"`
+	Name string `ohm:"name"`
 
 	LocalVar int
+}
+
+type setModel struct {
+	ID   string `ohm:"id"`
+	Name string `ohm:"name"`
+
+	Friends []validModel `ohm:"friends set"`
 }
 
 func TestValidateModel(t *testing.T) {
@@ -39,6 +46,10 @@ func TestValidateModel(t *testing.T) {
 	}
 
 	if err = validateModel(&LocalVarModel{}); err != nil {
+		t.Error(err)
+	}
+
+	if err = validateModel(&setModel{}); err != nil {
 		t.Error(err)
 	}
 
@@ -73,7 +84,19 @@ func TestModelWithLocalVar(t *testing.T) {
 	attrMap := modelAttrIndexMap(reflect.ValueOf(LocalVarModel{}).Type())
 
 	expectedMap := map[string]int{
-		`name`:  1,
+		`name`: 1,
+	}
+
+	if !reflect.DeepEqual(expectedMap, attrMap) {
+		t.Errorf(`expected %v, got %v`, expectedMap, attrMap)
+	}
+}
+
+func TestModelWithSet(t *testing.T) {
+	attrMap := modelAttrIndexMap(reflect.ValueOf(setModel{}).Type())
+
+	expectedMap := map[string]int{
+		`name`: 1,
 	}
 
 	if !reflect.DeepEqual(expectedMap, attrMap) {

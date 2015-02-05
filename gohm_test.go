@@ -652,3 +652,71 @@ func TestSort(t *testing.T) {
 		t.Errorf(`Expected user "%v" to be presented but not`, u2.ID)
 	}
 }
+
+func TestSet(t *testing.T) {
+	dbCleanup()
+	defer dbCleanup()
+	gohm, err := NewGohm()
+	if err != nil {
+		t.Error(err)
+	}
+
+	u := &user{
+		Name:  `Marty1`,
+		Email: `marty1@mcfly.com`,
+	}
+	err = gohm.Save(u)
+	if err != nil {
+		t.Error(err)
+	}
+
+	type setModel struct {
+		ID    string `ohm:"id"`
+		Users []user `ohm:"users set"`
+	}
+
+	model := &setModel{}
+	err = gohm.Save(model)
+	if err != nil {
+		t.Error(err)
+	}
+
+	err = gohm.MutableSet(model, "users").Add(u)
+	if err != nil {
+		t.Error(err)
+	}
+
+	exists, err := gohm.MutableSet(model, "users").ValueModel(&user{}).Exists(u.ID)
+	if err != nil {
+		t.Error(err)
+	}
+	if !exists {
+		t.Errorf("Expected model exists but not!")
+	}
+
+	var users []user
+	err = gohm.MutableSet(model, "users").Fetch(&users)
+	if err != nil {
+		t.Error(err)
+	}
+
+	if len(users) != 1 {
+		t.Errorf(`Expected 1 users, but was %v`, len(users))
+	}
+	if users[0].ID != u.ID {
+		t.Errorf(`Expected user "%v" to be presented but not`, u.ID)
+	}
+
+	err = gohm.MutableSet(model, "users").ValueModel(&user{}).DeleteById(u.ID)
+	if err != nil {
+		t.Error(err)
+	}
+
+	included, err := gohm.MutableSet(model, "users").Include(u)
+	if err != nil {
+		t.Error(err)
+	}
+	if included {
+		t.Errorf("Expected model to not be included!")
+	}
+}

@@ -9,9 +9,9 @@ import (
 )
 
 var (
-	IndexNotFoundError = errors.New("Index is not found!")
-	NotImplementedError = errors.New("Not implemented!")
-	MissingIdError = errors.New("Missing ID!")
+	IndexNotFoundError    = errors.New("Index is not found!")
+	NotImplementedError   = errors.New("Not implemented!")
+	MissingIdError        = errors.New("Missing ID!")
 	ModelTypeUnknownError = errors.New("Model type is unknown!")
 )
 
@@ -20,7 +20,7 @@ type Gohm struct {
 	LuaSave   *redis.Script
 	LuaDelete *redis.Script
 
-	TypeLocks map[string]*sync.Mutex
+	TypeLocks    map[string]*sync.Mutex
 	TypeLockLock sync.Mutex
 
 	Callbacks map[string][]CallbackFunc
@@ -121,7 +121,7 @@ func (g *Gohm) Update(model interface{}, attrs map[string]interface{}) error {
 		return err
 	}
 
-	arr := make([]string, len(attrs) * 2)
+	arr := make([]string, len(attrs)*2)
 	i := 0
 	for k, v := range attrs {
 		arr[i] = k
@@ -171,8 +171,7 @@ func (g *Gohm) Delete(model interface{}) error {
 		return err
 	}
 
-	// TODO: implements tracked
-	ohmTracked, err := msgpack.Marshal([]string{})
+	ohmTracked, err := msgpack.Marshal(modelTrackedKeys(modelType))
 	if err != nil {
 		return err
 	}
@@ -264,5 +263,5 @@ func (g *Gohm) Incr(model interface{}, key string, step int64) (int64, error) {
 }
 
 func (g *Gohm) Decr(model interface{}, key string, step int64) (int64, error) {
-	return g.Incr(model, key, - step)
+	return g.Incr(model, key, -step)
 }

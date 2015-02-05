@@ -26,20 +26,24 @@ func validateModel(model interface{}) error {
 	}
 
 	for i := 0; i < modelData.NumField(); i++ {
-		if len(modelType.Field(i).Tag.Get("ohm")) <= 0 {
+		ohmTag := modelType.Field(i).Tag.Get("ohm")
+		if len(ohmTag) <= 0 {
 			continue
 		}
+		tags := strings.Split(ohmTag, " ")
 
 		if !modelData.Field(i).CanSet() {
 			return NonExportedAttrError
 		}
 
-		if modelType.Field(i).Tag.Get(`ohm`) == `id` {
+		if len(tags) > 0 && tags[0] == `id` {
 			hasID = true
 		}
 
-		if modelType.Field(i).Type.Name() != `string` {
-			return NonStringIDError
+		if !stringInSlice("set", tags[1:]) {
+			if modelType.Field(i).Type.Name() != `string` {
+				return NonStringIDError
+			}
 		}
 	}
 
@@ -54,9 +58,12 @@ func modelAttrIndexMap(typeData reflect.Type) map[string]int {
 	attrs := map[string]int{}
 	for i := 0; i < typeData.NumField(); i++ {
 		field := typeData.Field(i)
-		tag := strings.Split(field.Tag.Get(`ohm`), ` `)[0]
-		if tag != `` && tag != `-` && tag != "id" {
-			attrs[tag] = i
+		tags := strings.Split(field.Tag.Get(`ohm`), ` `)
+		key := tags[0]
+		if key != `` && key != `-` && key != "id" {
+			if !stringInSlice(`set`, tags[1:]) {
+				attrs[key] = i
+			}
 		}
 	}
 
@@ -92,6 +99,21 @@ func modelUniqueIndexMap(typeData reflect.Type) map[string]int {
 		}
 	}
 	return uniques
+}
+
+func modelTrackedKeys(typeData reflect.Type) []string {
+	tracked := make([]string, 0)
+	for i := 0; i < typeData.NumField(); i++ {
+		field := typeData.Field(i)
+		tags := strings.Split(field.Tag.Get(`ohm`), ` `)
+		key := tags[0]
+		if key != `` && key != `-` && key != `id` {
+			if stringInSlice(`set`, tags[1:]) {
+				tracked = append(tracked, key)
+			}
+		}
+	}
+	return tracked
 }
 
 func modelHasIndex(typeData reflect.Type, index string) bool {
