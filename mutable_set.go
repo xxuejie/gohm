@@ -95,7 +95,7 @@ func (builder MutableSetBuilder) Set() (MutableSet, error) {
 		return MutableSet{}, err
 	}
 	baseModelName := baseModelType.Name()
-	return NewMutableSet(builder.G, connectKeys(baseModelName, builder.NameValue), baseModelName, baseModelType), nil
+	return NewMutableSet(builder.G, connectKeys(baseModelName, modelID(builder.BaseModelValue), builder.NameValue), baseModelName, baseModelType), nil
 }
 
 func (builder MutableSetBuilder) FetchByIds(v interface{}, ids []interface{}) error {
