@@ -78,6 +78,14 @@ func (q query) Fetch(v interface{}) error {
 	return SetFetch(set, v)
 }
 
+func (q query) Ids() ([]string, error) {
+	set, err := q.Set()
+	if err != nil {
+		return nil, err
+	}
+	return SetIds(set)
+}
+
 func (q query) Size() (int, error) {
 	set, err := q.Set()
 	if err != nil {

@@ -114,6 +114,14 @@ func (builder MutableSetBuilder) Fetch(v interface{}) error {
 	return SetFetch(set, v)
 }
 
+func (builder MutableSetBuilder) Ids() ([]string, error) {
+	set, err := builder.Set()
+	if err != nil {
+		return nil, err
+	}
+	return SetIds(set)
+}
+
 func (builder MutableSetBuilder) Size() (int, error) {
 	set, err := builder.Set()
 	if err != nil {
